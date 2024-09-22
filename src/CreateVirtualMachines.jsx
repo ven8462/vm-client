@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FaServer } from 'react-icons/fa'; // Import icon for visual enhancement
 
 const VM_URL = "http://127.0.0.1:8000/api/create-vms/";
 
 const CreateVirtualMachine = () => {
     const [name, setName] = useState('');
+    const [cpu, setCpu] = useState('2 vCPUs'); // New state for CPU
+    const [ram, setRam] = useState('4 GB'); // New state for RAM
+    const [cost, setCost] = useState('$20/month'); // New state for cost
     const [status, setStatus] = useState('running');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -21,6 +25,9 @@ const CreateVirtualMachine = () => {
         setLoading(true);
         const data = {
             name: name,
+            cpu: cpu,
+            ram: ram,
+            cost: cost,
             status: status
         };
 
@@ -53,28 +60,68 @@ const CreateVirtualMachine = () => {
     };
 
     return (
-        <div>
-            <h2 className="text-3xl font-bold">Create Virtual Machine</h2>
-            <p className="mt-4 text-lg">Enter the details of the virtual machine:</p>
+        <div className="max-w-lg mx-auto mt-10 bg-white p-8 rounded-xl shadow-lg">
+            <div className="text-center mb-6">
+                <FaServer className="inline-block text-blue-500 text-4xl mb-2" />
+                <h2 className="text-4xl font-bold text-gray-800">Create Virtual Machine</h2>
+                <p className="mt-2 text-gray-500">Enter the details to create a new virtual machine</p>
+            </div>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                    <label className="block text-lg">VM Name:</label>
+                    <label className="block text-lg font-semibold text-gray-700">VM Name:</label>
                     <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:border-blue-500"
+                        placeholder="Enter VM name"
                         required
                     />
                 </div>
 
                 <div>
-                    <label className="block text-lg">Status:</label>
+                    <label className="block text-lg font-semibold text-gray-700">CPU:</label>
+                    <input
+                        type="text"
+                        value={cpu}
+                        onChange={(e) => setCpu(e.target.value)}
+                        className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:border-blue-500"
+                        placeholder="Enter CPU capacity"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-lg font-semibold text-gray-700">RAM:</label>
+                    <input
+                        type="text"
+                        value={ram}
+                        onChange={(e) => setRam(e.target.value)}
+                        className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:border-blue-500"
+                        placeholder="Enter RAM size"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-lg font-semibold text-gray-700">Cost per month:</label>
+                    <input
+                        type="text"
+                        value={cost}
+                        onChange={(e) => setCost(e.target.value)}
+                        className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:border-blue-500"
+                        placeholder="Enter cost per month"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-lg font-semibold text-gray-700">Status:</label>
                     <select
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:border-blue-500"
                         required
                     >
                         <option value="running">Running</option>
@@ -84,15 +131,16 @@ const CreateVirtualMachine = () => {
 
                 <button
                     type="submit"
-                    className="w-full mt-4 bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition duration-300"
+                    className={`w-full mt-6 py-2 rounded-lg bg-blue-500 text-white font-semibold transition duration-300 hover:bg-blue-600 shadow-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     disabled={loading}
                 >
                     {loading ? 'Creating VM...' : 'Create VM'}
                 </button>
             </form>
 
-            {error && <p className="text-red-500 mt-4">{error}</p>}
-            {success && <p className="text-green-500 mt-4">{success}</p>}
+            {/* Display error or success messages */}
+            {error && <p className="mt-4 text-red-600 text-center">{error}</p>}
+            {success && <p className="mt-4 text-green-600 text-center">{success}</p>}
         </div>
     );
 };

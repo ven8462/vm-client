@@ -2,31 +2,75 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const ASSIGN_VM_URL = "http://127.0.0.1:8000/api/virtual-machines/";
+const USERS_URL = "http://127.0.0.1:8000/api/users/";
+const VMS_URL = "http://127.0.0.1:8000/api/virtual-machines/";
 
 const AssignVirtualMachine = () => {
-    const [vms, setVms] = useState([
-        { id: 1, name: 'VM1', status: 'running' },
-        { id: 2, name: 'VM2', status: 'stopped' },
-        { id: 3, name: 'VM3', status: 'running' },
-    ]); // Dummy data for virtual machines
-    const [users] = useState([
-        { username: 'ouma', realName: 'John Ouma' },
-        { username: 'arera', realName: 'Arera Arera' },
-        { username: 'ouma1', realName: 'Ouma Onyango' },
-        { username: 'ouma12', realName: 'Ouma John' }
-    ]); // Dummy user data
-
+    const [vms, setVms] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
     const [selectedVm, setSelectedVm] = useState(null);
     const [selectedUser, setSelectedUser] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
     const [token, setToken] = useState("");
 
     useEffect(() => {
         const accessToken = localStorage.getItem('accessToken');
         if (accessToken) setToken(JSON.parse(accessToken));
+        fetchUsers();
+        fetchVMs();
     }, []);
+
+    const fetchUsers = async () => {
+        setLoading(true);
+        setError(null);
+
+        // Simulating API response
+        const dummyUserData = [
+            { id: 1, username: 'ouma', realName: 'John Ouma', email: 'ouma@example.com' },
+            { id: 2, username: 'arera', realName: 'Arera Arera', email: 'arera@example.com' },
+            { id: 3, username: 'ouma1', realName: 'Ouma Onyango', email: 'ouma1@example.com' },
+            { id: 4, username: 'ouma12', realName: 'Ouma John', email: 'ouma12@example.com' }
+        ];
+
+        setTimeout(() => {
+            setUsers(dummyUserData);
+            setFilteredUsers(dummyUserData);
+            setLoading(false);
+        }, 500);
+    };
+
+    const fetchVMs = async () => {
+        setLoading(true);
+        setError(null);
+
+        // Simulating API response
+        const dummyVMData = [
+            { id: 1, name: 'VM1', status: 'running' },
+            { id: 2, name: 'VM2', status: 'stopped' },
+            { id: 3, name: 'VM3', status: 'running' },
+        ];
+
+        setTimeout(() => {
+            setVms(dummyVMData);
+            setLoading(false);
+        }, 500);
+    };
+
+    const handleSearch = (e) => {
+        const term = e.target.value.toLowerCase();
+        setSearchTerm(term);
+
+        const filtered = users.filter(user =>
+            user.realName.toLowerCase().includes(term) ||
+            user.username.toLowerCase().includes(term)
+        );
+
+        setFilteredUsers(filtered);
+    };
 
     const handleAssign = async () => {
         if (!selectedVm || !selectedUser) {
@@ -40,7 +84,7 @@ const AssignVirtualMachine = () => {
         try {
             const response = await axios.put(
                 `${ASSIGN_VM_URL}${selectedVm.id}/move/`,
-                { new_owner: selectedUser }, // Sending selected new owner
+                { new_owner: selectedUser },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -86,6 +130,19 @@ const AssignVirtualMachine = () => {
                     </select>
                 </div>
 
+                {/* User Search */}
+                <div>
+                    <label htmlFor="userSearch" className="block mb-2 font-semibold">Search User</label>
+                    <input
+                        type="text"
+                        id="userSearch"
+                        value={searchTerm}
+                        onChange={handleSearch}
+                        placeholder="Search by name or username"
+                        className="w-full border-gray-300 p-2 rounded-md"
+                    />
+                </div>
+
                 {/* Users Dropdown */}
                 <div>
                     <label htmlFor="user" className="block mb-2 font-semibold">Select New Owner</label>
@@ -95,9 +152,9 @@ const AssignVirtualMachine = () => {
                         onChange={(e) => setSelectedUser(e.target.value)}
                     >
                         <option value="">--Select New Owner--</option>
-                        {users.map((user) => (
-                            <option key={user.username} value={user.username}>
-                                {user.realName}
+                        {filteredUsers.map((user) => (
+                            <option key={user.id} value={user.username}>
+                                {user.realName} ({user.username}) - {user.email}
                             </option>
                         ))}
                     </select>
