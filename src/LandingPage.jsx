@@ -24,11 +24,7 @@ const LandingPage = () => {
     >
       {/* Background Image */}
       <div
-<<<<<<< HEAD
         className="absolut inset-0 bg-cover bg-center bg-no-repeat z-0"
-=======
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
->>>>>>> 5e05bdb444d7deb2e207cce951eee69248568121
         style={{
           backgroundImage: `url(${background})`,
         }}
