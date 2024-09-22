@@ -14,10 +14,10 @@ const UserDashboard = () => {
           <ul className="space-y-4">
             <li>
               <Link
-                to="vm-management"
+                to="sub-users"
                 className="w-full block text-gray-300 py-3 px-4 rounded-md hover:bg-gray-700 hover:text-white transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                Manage Virtual Machines
+                Sub Users
               </Link>
             </li>
             <li>

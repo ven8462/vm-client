@@ -12,7 +12,7 @@ import CreateVirtualMachine from './CreateVirtualMachines';
 import ManageVirtualMachine from './ManageVirtualMachines';
 import VirtualMachineList from './RemoveVirtualMachine';
 import AssignVirtualMachine from './AssignVirtualMachine';
-import GuestDashboard from './GuestDashboard';
+import SubUsers from './SubUsers';
 
 const App = () => {
   return (
@@ -22,7 +22,6 @@ const App = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginForm />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/guest" element={<GuestDashboard />} />
 
           <Route path='admin' element={<AdminDashboard />}>
             <Route path="create-vm" element={<CreateVirtualMachine />} />
@@ -33,7 +32,7 @@ const App = () => {
 
           {/* Nested routes inside UserDashboard */}
           <Route path="/account" element={<UserDashboard />}>
-            <Route path="vm-management" element={<GuestDashboard />} />
+            <Route path="sub-users" element={<SubUsers />} />
             <Route path="create-backup" element={<CreateBackup />} />
             <Route path="billing" element={<Billing />} />
             <Route path="subscription-management" element={<SubscriptionManagement />} />
@@ -42,6 +41,6 @@ const App = () => {
       </Router>
     </div>
   );
-};
+};;
 
 export default App;

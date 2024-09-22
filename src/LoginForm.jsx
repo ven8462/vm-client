@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';  
 
 const LOGIN_URL = "http://127.0.0.1:8000/api/login/";
-const GOOGLE_LOGIN_URL = "http://127.0.0.1:8000/api/google-login/"; 
+const GOOGLE_LOGIN_URL = "http://127.0.0.1:8000/api/google-login/";
 
-const LoginForm = () => {
+const LoginForm = ({ onClose }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,10 +19,7 @@ const LoginForm = () => {
     if (!username || !password) return;
     setLoading(true);
 
-    const data = {
-      username_or_email: username,
-      password,
-    };
+    const data = { username_or_email: username, password };
 
     try {
       const response = await fetch(LOGIN_URL, {
@@ -102,63 +99,75 @@ const LoginForm = () => {
   };
 
   return (
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID"> {/* Add Google OAuth Provider */}
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-          <h2 className="text-2xl font-bold mb-5 text-center">Login</h2>
+    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+      {/* Modal Overlay */}
+      <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center" onClick={onClose}>
+        <div
+          className="relative bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-lg"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 text-gray-400 hover:text-gray-100 text-2xl font-bold"
+          >
+            &times;
+          </button>
 
+          <h2 className="text-3xl font-bold mb-6 text-center text-white">Login</h2>
 
-          {errorMessage && (
-            <p className="text-red-500 text-center mb-4">{errorMessage}</p>
-          )}
-          {success && (
-            <p className="text-green-700 text-center mb-4">{success}</p>
-          )}
-          
-          {/* Google Sign-In Button */}
-          <div className="mt-5">
+          {/* Error and Success Messages */}
+          {errorMessage && <p className="text-red-500 text-center mb-4">{errorMessage}</p>}
+          {success && <p className="text-green-500 text-center mb-4">{success}</p>}
+
+          {/* Google Login */}
+          <div className="flex justify-center mb-6">
             <GoogleLogin
               onSuccess={handleGoogleLogin}
               onError={() => setErrorMessage('Google Sign-In failed.')}
+              text="signin_with"
+              shape="pill"
+              theme="outline"
+              width="300px"
             />
           </div>
-          <br />
-          <h2 className="text-2xl font-bold mb-5 text-center">OR</h2>
-          <form onSubmit={handleSubmit}>
+
+          <h3 className="text-center text-gray-300 text-lg">OR</h3>
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             {/* Username Field */}
-            <div className="mb-4">
-              <label htmlFor="username" className="block text-gray-700">
+            <div>
+              <label htmlFor="username" className="block text-gray-400">
                 Username
               </label>
               <input
                 type="text"
                 id="username"
-                name="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 mt-2 text-gray-900 bg-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-500"
                 required
               />
             </div>
 
             {/* Password Field */}
-            <div className="mb-4 relative">
-              <label htmlFor="password" className="block text-gray-700">
+            <div className="relative">
+              <label htmlFor="password" className="block text-gray-400">
                 Password
               </label>
               <input
                 type={showPassword ? 'text' : 'password'}
                 id="password"
-                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 mt-2 text-gray-900 bg-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-500"
                 required
               />
               <button
                 type="button"
                 onClick={togglePasswordVisibility}
-                className="absolute right-3 top-3 text-gray-600 focus:outline-none"
+                className="absolute top-3 right-3 text-gray-400 focus:outline-none"
               >
                 {showPassword ? 'Hide' : 'Show'}
               </button>
@@ -167,17 +176,11 @@ const LoginForm = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+              className="w-full py-3 mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg focus:outline-none focus:ring transition duration-200"
             >
-              {loading ? "Loading..." : "Login"}
+              {loading ? 'Logging in...' : 'Login'}
             </button>
-
-            <div className="text-sm font-medium text-gray-900 dark:text-gray-900">
-              Not registered? <a href="signup" className="text-blue-700 hover:underline dark:text-blue-500">Create account</a>
-            </div>
           </form>
-
-          
         </div>
       </div>
     </GoogleOAuthProvider>

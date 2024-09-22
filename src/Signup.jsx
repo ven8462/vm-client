@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'; // Import Google OAuth components
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 const SIGNUP_URL = "http://127.0.0.1:8000/api/signup/";
-const GOOGLE_SIGNUP_URL = "http://127.0.0.1:8000/api/google-signup/"; // Endpoint for Google signup
+const GOOGLE_SIGNUP_URL = "http://127.0.0.1:8000/api/google-signup/";
 
-const Signup = () => {
+const Signup = ({ onClose }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [confirmPasswordVisisble, setConfirmPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [suggestedUsername, setSuggestedUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
@@ -57,8 +57,8 @@ const Signup = () => {
     setPasswordVisible(!passwordVisible);
   };
 
-  const toggleConfirmPasswordVisisbility = () => {
-    setConfirmPasswordVisible(!confirmPasswordVisisble);
+  const toggleConfirmPasswordVisibility = () => {
+    setConfirmPasswordVisible(!confirmPasswordVisible);
   };
 
   const handleSubmit = async (e) => {
@@ -120,127 +120,124 @@ const Signup = () => {
 
   return (
     <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
-      <div className="max-w-md mx-auto mt-10 bg-white shadow-md p-6 rounded-lg">
-        <h2 className="text-2xl font-semibold text-center mb-6">Sign Up</h2>
-        {/* Google SSO Button */}
-        <div className="my-4">
-          <GoogleLogin
-            onSuccess={handleGoogleSignup}
-            onError={() => {
-              setErrorMessage('Login Failed');
-            }}
-          />
-        </div>
-        <br />
-        <h2 className="text-2xl font-bold mb-5 text-center">OR</h2>
-        <form onSubmit={handleSubmit}>
-          {/* Email Input */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value.toLowerCase())}
-              placeholder="Enter your email"
-              required
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      <div className="flex items-center justify-center min-h-screen bg-gray-800">
+        <div className="relative bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md sm:max-w-lg">
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 text-gray-400 hover:text-gray-100 text-2xl font-bold focus:outline-none"
+            aria-label="Close Signup Form"
+          >
+            &times;
+          </button>
+
+          <h2 className="text-3xl font-bold mb-6 text-center text-white">Sign Up</h2>
+
+          {/* Google Signup */}
+          <div className="flex justify-center mb-6">
+            <GoogleLogin
+              onSuccess={handleGoogleSignup}
+              onError={() => setErrorMessage('Google Sign-Up failed.')}
+              text="signup_with"
+              shape="pill"
+              theme="outline"
+              width="300px"
             />
           </div>
 
-          {/* Username Input */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value.toLowerCase())}
-              placeholder="Enter your username"
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {suggestedUsername && (
-              <p className="mt-2 text-sm text-gray-600">
-                Suggested username: <strong>{suggestedUsername}</strong>{' '}
-                <button
-                  type="button"
-                  onClick={() => setUsername(suggestedUsername)}
-                  className="text-blue-500 underline"
-                >
-                  Use suggestion
-                </button>
-              </p>
-            )}
-          </div>
+          <h3 className="text-center text-gray-300 text-lg">OR</h3>
 
-          {/* Password Input */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Password</label>
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            {/* Email Field */}
+            <div>
+              <label htmlFor="email" className="block text-gray-300">Email</label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                className="w-full px-4 py-2 mt-2 text-gray-900 bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            {/* Username Field */}
+            <div>
+              <label htmlFor="username" className="block text-gray-300">Username</label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                className="w-full px-4 py-2 mt-2 text-gray-900 bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {suggestedUsername && (
+                <p className="mt-2 text-sm text-gray-400">
+                  Suggested username: <strong>{suggestedUsername}</strong>{' '}
+                  <button
+                    type="button"
+                    onClick={() => setUsername(suggestedUsername)}
+                    className="text-blue-500 underline"
+                  >
+                    Use suggestion
+                  </button>
+                </p>
+              )}
+            </div>
+
+            {/* Password Field */}
             <div className="relative">
+              <label htmlFor="password" className="block text-gray-300">Password</label>
               <input
                 type={passwordVisible ? 'text' : 'password'}
+                id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                className="w-full px-4 py-2 mt-2 text-gray-900 bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 type="button"
                 onClick={togglePasswordVisibility}
-                className="absolute inset-y-0 right-3 text-gray-500 focus:outline-none"
+                className="absolute top-3 right-3 text-gray-600 hover:text-gray-800 focus:outline-none"
               >
                 {passwordVisible ? 'Hide' : 'Show'}
               </button>
             </div>
-          </div>
 
-          {/* Confirm Password Input */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Confirm Password</label>
+            {/* Confirm Password Field */}
             <div className="relative">
+              <label htmlFor="confirmPassword" className="block text-gray-300">Confirm Password</label>
               <input
-                type={confirmPasswordVisisble ? 'text' : 'password'}
+                type={confirmPasswordVisible ? 'text' : 'password'}
+                id="confirmPassword"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your password"
+                className="w-full px-4 py-2 mt-2 text-gray-900 bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 type="button"
-                onClick={toggleConfirmPasswordVisisbility}
-                className="absolute inset-y-0 right-3 text-gray-500 focus:outline-none"
+                onClick={toggleConfirmPasswordVisibility}
+                className="absolute top-3 right-3 text-gray-600 hover:text-gray-800 focus:outline-none"
               >
-                {confirmPasswordVisisble ? 'Hide' : 'Show'}
+                {confirmPasswordVisible ? 'Hide' : 'Show'}
               </button>
             </div>
-          </div>
 
-          {errorMessage && (
-            <p className="text-red-500 text-center mb-4">{errorMessage}</p>
-          )}
-          {success && (
-            <p className="text-green-700 text-center mb-4">{success}</p>
-          )}
+            {/* Error and Success Messages */}
+            {errorMessage && <p className="text-red-500 text-center mb-4">{errorMessage}</p>}
+            {success && <p className="text-green-500 text-center mb-4">{success}</p>}
 
-          {/* Submit Button */}
-          <div>
+            {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full py-3 mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
             >
               {loading ? "Sending..." : "Sign Up"}
             </button>
-          </div>
-        </form>
-
-        
-
-        <p className="text-center text-gray-600 mt-4">
-          Already have an account?{' '}
-          <a href="/login" className="text-blue-500 underline">
-            Log In
-          </a>
-        </p>
+          </form>
+        </div>
       </div>
     </GoogleOAuthProvider>
   );
