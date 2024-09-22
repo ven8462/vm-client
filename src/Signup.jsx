@@ -101,22 +101,6 @@ const Signup = ({ onClose }) => {
     }
   };
 
-  const handleGoogleSignup = async (response) => {
-    try {
-      const result = await axios.post(GOOGLE_SIGNUP_URL, {
-        token: response.credential,
-      });
-
-      if (result.data.success) {
-        setSuccess(result.data.message);
-        setTimeout(() => navigate('/login'), 3000);
-      } else {
-        setErrorMessage(result.data.message);
-      }
-    } catch (error) {
-      setErrorMessage(`Google signup failed: ${error.message}`);
-    }
-  };
 
   return (
     <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
@@ -132,18 +116,6 @@ const Signup = ({ onClose }) => {
           </button>
 
           <h2 className="text-3xl font-bold mb-6 text-center text-white">Sign Up</h2>
-
-          {/* Google Signup */}
-          <div className="flex justify-center mb-6">
-            <GoogleLogin
-              onSuccess={handleGoogleSignup}
-              onError={() => setErrorMessage('Google Sign-Up failed.')}
-              text="signup_with"
-              shape="pill"
-              theme="outline"
-              width="300px"
-            />
-          </div>
 
           <h3 className="text-center text-gray-300 text-lg">OR</h3>
 
