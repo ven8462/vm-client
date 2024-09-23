@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const SUBSCRIPTION_URL = "http://127.0.0.1:8000/api/subscribe/";
+const SUBSCRIPTION_URL = "https://vm-server.onrender.com/api/subscribe/";
 
 const SubscriptionManagement = () => {
     const [loading, setLoading] = useState(false);
@@ -9,16 +9,16 @@ const SubscriptionManagement = () => {
     const [success, setSuccess] = useState(null);
     const [token, setToken] = useState("");
     const [currentSubscription, setCurrentSubscription] = useState(null);
-    const [loadingPlanId, setLoadingPlanId] = useState(null); // Track which plan is being loaded
-    const [showModal, setShowModal] = useState(false); // Modal visibility
-    const [selectedPlan, setSelectedPlan] = useState(null); // Selected plan for confirmation
+    const [loadingPlanId, setLoadingPlanId] = useState(null); 
+    const [showModal, setShowModal] = useState(false); 
+    const [selectedPlan, setSelectedPlan] = useState(null); 
 
     useEffect(() => {
         const accessToken = localStorage.getItem('accessToken');
         if (accessToken) setToken(JSON.parse(accessToken));
 
-        // Simulate fetching current subscription
-        setCurrentSubscription('Silver'); // Hardcoded current subscription for demonstration
+        
+        setCurrentSubscription('Silver'); 
     }, []);
 
     const subscriptionPlans = [
@@ -29,7 +29,6 @@ const SubscriptionManagement = () => {
     ];
 
     const handleSubscribe = (plan) => {
-        // Set selected plan and show confirmation modal
         setSelectedPlan(plan);
         setShowModal(true);
     };
@@ -38,7 +37,7 @@ const SubscriptionManagement = () => {
         setLoading(true);
         setError(null);
         setSuccess(null);
-        setLoadingPlanId(selectedPlan.id); // Set the loading plan ID
+        setLoadingPlanId(selectedPlan.id); 
 
         try {
             const response = await axios.post(SUBSCRIPTION_URL, { plan: selectedPlan.name.toLowerCase() }, {
@@ -47,13 +46,14 @@ const SubscriptionManagement = () => {
                 },
             });
             setSuccess(response.data.message);
-            setCurrentSubscription(selectedPlan.name); // Update current subscription
+            setCurrentSubscription(selectedPlan.name); 
         } catch (error) {
             setError(error.response ? error.response.data.message : 'Something went wrong!');
+            setTimeout(() => setError(""), 5000)
         } finally {
             setLoading(false);
-            setLoadingPlanId(null); // Reset loading plan ID
-            setShowModal(false); // Close the modal
+            setLoadingPlanId(null); 
+            setShowModal(false); 
         }
     };
 
@@ -78,10 +78,10 @@ const SubscriptionManagement = () => {
                             onClick={() => handleSubscribe(plan)}
                             className={`w-full mt-4 py-2 rounded transition duration-300 ${
                                 currentSubscription === plan.name 
-                                ? 'bg-gray-400 cursor-not-allowed' // Disabled style for current subscription
-                                : 'bg-blue-500 text-white hover:bg-blue-600' // Enabled style for other plans
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-blue-500 text-white hover:bg-blue-600' 
                             }`}
-                            disabled={loadingPlanId === plan.id || currentSubscription === plan.name} // Disable if already subscribed to this plan or the plan is loading
+                            disabled={loadingPlanId === plan.id || currentSubscription === plan.name} 
                         >
                             {loadingPlanId === plan.id ? 'Submitting...' : currentSubscription === plan.name ? 'Current Plan' : 'Subscribe'}
                         </button>
@@ -110,7 +110,7 @@ const SubscriptionManagement = () => {
                                 onClick={confirmSubscriptionChange}
                                 className="bg-blue-500 text-white py-2 px-4 rounded"
                             >
-                                Confirm
+                                {loading? "Sending..." : "Confirm"}
                             </button>
                         </div>
                     </div>

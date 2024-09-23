@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';  
 
-const LOGIN_URL = "http://127.0.0.1:8000/api/login/";
-const GOOGLE_LOGIN_URL = "http://127.0.0.1:8000/api/google-login/";
+const LOGIN_URL = "https://vm-server.onrender.com/api/login/";
 
 const LoginForm = ({ onClose }) => {
   const [username, setUsername] = useState('');
@@ -14,6 +13,7 @@ const LoginForm = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Handle manual login
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!username || !password) return;
@@ -25,7 +25,7 @@ const LoginForm = ({ onClose }) => {
       const response = await fetch(LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, login_type: 'manual' }),  // Add login type
       });
 
       const result = await response.json();
@@ -59,17 +59,38 @@ const LoginForm = ({ onClose }) => {
     }
   };
 
+  // Handle Google login
   const handleGoogleLogin = async (googleResponse) => {
     try {
-      // Assuming successful login, store tokens and redirect
-      const { credential } = googleResponse;
+      const { credential: id_token } = googleResponse;
 
-      // Simulate backend validation and response handling
-      localStorage.setItem("accessToken", credential); // Store the JWT from Google
-      setErrorMessage("");
+      // Send Google ID token to backend for verification
+      const response = await fetch(LOGIN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token, login_type: 'google' }),  // Send id_token for Google login
+      });
 
-      // Redirect to /account after successful login
-      navigate("/account");
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccess(result.message);
+        localStorage.setItem("refreshToken", JSON.stringify(result.refresh_token));
+        localStorage.setItem("accessToken", JSON.stringify(result.access_token));
+
+        // Redirect based on user role
+        if (result.role === "Standard User") {
+          navigate("/account");
+        } else if (result.role === "Admin") {
+          navigate("/admin");
+        } else if (result.role === "Guest") {
+          navigate("/guest");
+        } else {
+          navigate("/account");
+        }
+      } else {
+        setErrorMessage(result.message);
+      }
     } catch (error) {
       setErrorMessage('Google login failed. Please try again.');
       console.error('Google login error:', error);

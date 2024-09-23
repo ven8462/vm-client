@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FaServer } from 'react-icons/fa'; // Import icon for visual enhancement
+import { FaServer } from 'react-icons/fa'; 
 
-const VM_URL = "http://127.0.0.1:8000/api/create-vms/";
+const VM_URL = "https://vm-server.onrender.com/api/create-vms/";
 
 const CreateVirtualMachine = () => {
     const [name, setName] = useState('');
-    const [cpu, setCpu] = useState('2 vCPUs'); // New state for CPU
-    const [ram, setRam] = useState('4 GB'); // New state for RAM
-    const [cost, setCost] = useState('$20/month'); // New state for cost
+    const [cpu, setCpu] = useState('');
+    const [ram, setRam] = useState(''); 
+    const [cost, setCost] = useState(''); 
     const [status, setStatus] = useState('running');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -40,16 +40,34 @@ const CreateVirtualMachine = () => {
 
             if (response.data.success) {
                 setSuccess(response.data.message);
+                setName("");
+                setCpu("");
+                setRam("");
+                setCost("");
                 setTimeout(() => setSuccess(""), 5000);
             } else {
+                console.log(response.data);
                 setError(response.data.message);
                 setTimeout(() => setError(""), 5000);
             }
         } catch (error) {
+            if (error.response) {
+                // Server responded with a status code out of the range of 2xx
+                console.error('Error data:', error.response.data);
+                console.error('Error status:', error.response.status);
+                console.error('Error headers:', error.response.headers);
+            } else if (error.request) {
+                // Request was made but no response was received
+                console.error('Error request:', error.request);
+            } else {
+                // Something happened in setting up the request
+                console.error('Error message:', error.message);
+            }
             setError('Error creating virtual machine.');
             setTimeout(() => setError(""), 5000);
             console.error(error);
-        } finally {
+        }
+         finally {
             setLoading(false);
         }
     };
@@ -87,7 +105,7 @@ const CreateVirtualMachine = () => {
                         value={cpu}
                         onChange={(e) => setCpu(e.target.value)}
                         className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:border-blue-500"
-                        placeholder="Enter CPU capacity"
+                        placeholder="Enter CPU capacity in vCPUs"
                         required
                     />
                 </div>
@@ -99,7 +117,7 @@ const CreateVirtualMachine = () => {
                         value={ram}
                         onChange={(e) => setRam(e.target.value)}
                         className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:border-blue-500"
-                        placeholder="Enter RAM size"
+                        placeholder="Enter RAM size in GBs"
                         required
                     />
                 </div>
@@ -111,7 +129,7 @@ const CreateVirtualMachine = () => {
                         value={cost}
                         onChange={(e) => setCost(e.target.value)}
                         className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:border-blue-500"
-                        placeholder="Enter cost per month"
+                        placeholder="Enter cost per month in $(dollars)"
                         required
                     />
                 </div>

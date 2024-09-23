@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const DELETE_VM_URL = "http://127.0.0.1:8000/api/vms/delete/";
-// const VM_LIST_URL = "http://127.0.0.1:8000/api/vms/"; // Commented out for dummy data
+const DELETE_VM_URL = "https://vm-server.onrender.com/api/vms/delete/";
+const VMS_URL = "https://vm-server.onrender.com/api/my-vms/";
 
 const VirtualMachineList = () => {
     const [vms, setVms] = useState([]);
@@ -11,6 +11,7 @@ const VirtualMachineList = () => {
     const [token, setToken] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [vmsPerPage] = useState(10);
+    const [deletingVMId, setDeletingVMId] = useState(null); // Track which VM is being deleted
 
     useEffect(() => {
         const accessToken = localStorage.getItem('accessToken');
@@ -19,48 +20,55 @@ const VirtualMachineList = () => {
     }, [token]);
 
     const fetchVMs = async () => {
+        if (!token) return; // Ensure token is available before fetching
+
         setLoading(true);
         setError(null);
 
-        // Dummy data for testing
-        const dummyData = [
-            { id: 1, name: 'VM1', cpu: '2 CPU', ram: '4 GB', cost: '$10/month', status: 'running' },
-            { id: 2, name: 'VM2', cpu: '4 CPU', ram: '8 GB', cost: '$20/month', status: 'stopped' },
-            { id: 3, name: 'VM3', cpu: '1 CPU', ram: '2 GB', cost: '$5/month', status: 'running' },
-            { id: 4, name: 'VM4', cpu: '8 CPU', ram: '16 GB', cost: '$40/month', status: 'running' },
-            { id: 5, name: 'VM5', cpu: '16 CPU', ram: '32 GB', cost: '$80/month', status: 'stopped' },
-            { id: 6, name: 'VM6', cpu: '2 CPU', ram: '4 GB', cost: '$10/month', status: 'running' },
-            { id: 7, name: 'VM7', cpu: '4 CPU', ram: '8 GB', cost: '$20/month', status: 'stopped' },
-            { id: 8, name: 'VM8', cpu: '1 CPU', ram: '2 GB', cost: '$5/month', status: 'running' },
-            { id: 9, name: 'VM9', cpu: '8 CPU', ram: '16 GB', cost: '$40/month', status: 'running' },
-            { id: 10, name: 'VM10', cpu: '16 CPU', ram: '32 GB', cost: '$80/month', status: 'stopped' },
-            { id: 11, name: 'VM11', cpu: '2 CPU', ram: '4 GB', cost: '$10/month', status: 'running' },
-        ];
-
-        // Simulating an API response
-        setTimeout(() => {
-            setVms(dummyData);
+        try {
+            const response = await axios.get(VMS_URL, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const data = response.data;
+            if (data.success) {
+                setVms(data.virtual_machines);
+            } else {
+                setError("Failed to fetch virtual machines.");
+            }
+        } catch (err) {
+            setError("Error fetching virtual machines.");
+            console.error(err);
+        } finally {
             setLoading(false);
-        }, 500);
+        }
     };
 
     const handleDelete = async (id) => {
         if (!token) return;
-        setLoading(true);
+        setDeletingVMId(id); // Mark the VM as being deleted
         setError(null);
+        console.log("ID: ", id)
 
-        // Simulating deletion
         try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            const response = await axios.delete(`${DELETE_VM_URL}${id}/`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-            // Remove the deleted VM from the local state
-            setVms(vms.filter((vm) => vm.id !== id));
+            if (response.status === 204) {
+                // VM successfully deleted, update the local state
+                setVms(vms.filter((vm) => vm.id !== id));
+            } else {
+                setError("Failed to delete virtual machine.");
+            }
         } catch (error) {
-            setError('Error deleting virtual machine.');
+            setError("Error deleting virtual machine.");
             console.error(error);
         } finally {
-            setLoading(false);
+            setDeletingVMId(null); // Reset deleting state
         }
     };
 
@@ -108,9 +116,9 @@ const VirtualMachineList = () => {
                                     <button
                                         onClick={() => handleDelete(vm.id)}
                                         className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 transition duration-300"
-                                        disabled={loading}
+                                        disabled={deletingVMId === vm.id} // Disable button only for the VM being deleted
                                     >
-                                        {loading ? 'Deleting...' : 'Delete'}
+                                        {deletingVMId === vm.id ? 'Deleting...' : 'Delete'}
                                     </button>
                                 </td>
                             </tr>

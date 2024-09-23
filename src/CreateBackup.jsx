@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const BACKUP_URL = "https://vm-server.onrender.com/api/create-backup/";
-const VM_LIST_URL = "http://127.0.0.1:8000/api/virtual-machines/";
+const VM_LIST_URL = "https://vm-server.onrender.com/api/vms/assigned/";
 
 const CreateBackup = () => {
   const [loading, setLoading] = useState(false);
@@ -14,23 +14,43 @@ const CreateBackup = () => {
   const [selectedVM, setSelectedVM] = useState(null);
   const [totalBill, setTotalBill] = useState(0);
 
-  // Dummy data for testing
-  const datum = [
-    { id: 1, name: "VM Alpha", dataNotBackedUp: 24, dataBackedUp: 9 },
-    { id: 2, name: "VM Zeta", dataNotBackedUp: 4, dataBackedUp: 9 },
-    { id: 3, name: "VM Beta", dataNotBackedUp: 24, dataBackedUp: 0 }
-  ];
-
-  useEffect(() => {
+  useEffect(() =>{
     const accessToken = localStorage.getItem('accessToken');
-    if (accessToken) setToken(JSON.parse(accessToken));
-    setVirtualMachines(datum);
+      if (accessToken) {
+        setToken(JSON.parse(accessToken));
+      }
+  }, [])
+  useEffect(() => {
+    const fetchVMs = async () => {
+      if(!token) return;
+
+      try {
+        const response = await axios.get(VM_LIST_URL, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.data.success) {
+          setVirtualMachines(response.data.data);
+        } else {
+          setError("Failed to fetch virtual machines.");
+        }
+      } catch (error) {
+        console.error("Error fetching virtual machines:", error);
+        setError("Error fetching virtual machines.");
+      }
+    };
+
+    fetchVMs();
   }, []);
 
+  // Calculate bill based on the size of data to back up
   const calculateBill = (size) => {
     return size * 50; // KES 50 per MB
   };
 
+  // Handle backup click
   const handleBackupClick = (vm) => {
     const bill = calculateBill(vm.dataNotBackedUp);
     setTotalBill(bill);
@@ -38,12 +58,15 @@ const CreateBackup = () => {
     setModalOpen(true);
   };
 
+  // Post backup request to the backend
   const postBackup = async () => {
     if (!token || !selectedVM) return;
     setLoading(true);
+
     const data = {
       vm: selectedVM.id,
       size: selectedVM.dataNotBackedUp,
+      bill: totalBill // Include the calculated bill in the request
     };
 
     try {
@@ -70,6 +93,7 @@ const CreateBackup = () => {
     }
   };
 
+  // Close the modal
   const closeModal = () => {
     setModalOpen(false);
     setSelectedVM(null);
