@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
-const SIGNUP_URL = "http://127.0.0.1:8000/api/signup/";
+const SIGNUP_URL = "https://vm-server.onrender.com/api/signup/";
 const GOOGLE_SIGNUP_URL = "http://127.0.0.1:8000/api/google-signup/";
 
 const Signup = ({ onClose }) => {
@@ -13,54 +13,15 @@ const Signup = ({ onClose }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const [suggestedUsername, setSuggestedUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
-  // Generate unique but simple usernames
-  const generateUsername = (email) => {
-    const emailUsername = email.split('@')[0];
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    return `${emailUsername}${randomSuffix}`.toLowerCase();
-  };
+  const togglePasswordVisibility = () => setPasswordVisible(!passwordVisible);
+  const toggleConfirmPasswordVisibility = () => setConfirmPasswordVisible(!confirmPasswordVisible);
 
-  // Function to check if the username is available
-  const checkUsernameAvailability = async (username) => {
-    try {
-      const response = await axios.post('http://localhost:3000/api/check-username', {
-        username: username,
-      });
-      return response.data.isAvailable;
-    } catch (error) {
-      console.error('Error checking username availability', error);
-      return false;
-    }
-  };
-
-  // Suggest a unique username when email is entered
-  useEffect(() => {
-    if (email) {
-      const newSuggestedUsername = generateUsername(email);
-      checkUsernameAvailability(newSuggestedUsername).then((isAvailable) => {
-        if (isAvailable) {
-          setSuggestedUsername(newSuggestedUsername);
-        } else {
-          setSuggestedUsername(generateUsername(email));
-        }
-      });
-    }
-  }, [email]);
-
-  const togglePasswordVisibility = () => {
-    setPasswordVisible(!passwordVisible);
-  };
-
-  const toggleConfirmPasswordVisibility = () => {
-    setConfirmPasswordVisible(!confirmPasswordVisible);
-  };
-
+  // Handle form submit for manual signup
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -70,59 +31,51 @@ const Signup = ({ onClose }) => {
     setLoading(true);
 
     const data = { username, email, password };
-
     try {
-      const response = await fetch(SIGNUP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setSuccess(result.message);
+      const response = await axios.post(SIGNUP_URL, data);
+      if (response.data.success) {
+        setSuccess(response.data.message);
         setTimeout(() => setSuccess(""), 3000);
-        setConfirmPassword("");
-        setEmail("");
-        setPassword("");
-        setUsername("");
-        setSuggestedUsername("");
         setTimeout(() => navigate("/login"), 5000);
       } else {
-        setErrorMessage(result.message);
-        setTimeout(() => setErrorMessage(""), 3000);
+        setErrorMessage(response.data.message);
       }
     } catch (error) {
       setErrorMessage(`Signup failed. Error: ${error}`);
-      setTimeout(() => setErrorMessage(""), 5000);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignup = async (response) => {
+  // Handle Google sign-up/login response
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
     try {
-      const result = await axios.post(GOOGLE_SIGNUP_URL, {
-        token: response.credential,
+      const response = await axios.post(SIGNUP_URL, {
+        token: credentialResponse.credential,
       });
-
-      if (result.data.success) {
-        setSuccess(result.data.message);
-        setTimeout(() => navigate('/login'), 3000);
+      if (response.data.success) {
+        setSuccess(response.data.message);
+        setTimeout(() => setSuccess(""), 3000);
+        setTimeout(() => navigate("/login"), 5000);
       } else {
-        setErrorMessage(result.data.message);
+        setErrorMessage(response.data.message);
       }
     } catch (error) {
-      setErrorMessage(`Google signup failed: ${error.message}`);
+      setErrorMessage(`Google signup failed. Error: ${error}`);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleGoogleError = () => {
+    setErrorMessage("Google sign-in failed. Please try again.");
   };
 
   return (
     <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
       <div className="flex items-center justify-center min-h-screen bg-gray-800">
         <div className="relative bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md sm:max-w-lg">
-          {/* Close Button */}
           <button
             onClick={onClose}
             className="absolute top-2 right-2 text-gray-400 hover:text-gray-100 text-2xl font-bold focus:outline-none"
@@ -133,20 +86,18 @@ const Signup = ({ onClose }) => {
 
           <h2 className="text-3xl font-bold mb-6 text-center text-white">Sign Up</h2>
 
-          {/* Google Signup */}
+          {/* Google Sign-Up Button */}
           <div className="flex justify-center mb-6">
             <GoogleLogin
-              onSuccess={handleGoogleSignup}
-              onError={() => setErrorMessage('Google Sign-Up failed.')}
-              text="signup_with"
-              shape="pill"
-              theme="outline"
-              width="300px"
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap
             />
           </div>
 
           <h3 className="text-center text-gray-300 text-lg">OR</h3>
 
+          {/* Manual Signup Form */}
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             {/* Email Field */}
             <div>
@@ -170,19 +121,8 @@ const Signup = ({ onClose }) => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase())}
                 className="w-full px-4 py-2 mt-2 text-gray-900 bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
               />
-              {suggestedUsername && (
-                <p className="mt-2 text-sm text-gray-400">
-                  Suggested username: <strong>{suggestedUsername}</strong>{' '}
-                  <button
-                    type="button"
-                    onClick={() => setUsername(suggestedUsername)}
-                    className="text-blue-500 underline"
-                  >
-                    Use suggestion
-                  </button>
-                </p>
-              )}
             </div>
 
             {/* Password Field */}

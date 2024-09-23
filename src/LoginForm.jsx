@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';  
 
-const LOGIN_URL = "http://127.0.0.1:8000/api/login/";
-const GOOGLE_LOGIN_URL = "http://127.0.0.1:8000/api/google-login/";
+const LOGIN_URL = "https://vm-server.onrender.com/api/login/";
 
 const LoginForm = ({ onClose }) => {
   const [username, setUsername] = useState('');
@@ -14,6 +13,7 @@ const LoginForm = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Handle manual login
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!username || !password) return;
@@ -25,7 +25,7 @@ const LoginForm = ({ onClose }) => {
       const response = await fetch(LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, login_type: 'manual' }),  // Add login type
       });
 
       const result = await response.json();
@@ -59,22 +59,26 @@ const LoginForm = ({ onClose }) => {
     }
   };
 
+  // Handle Google login
   const handleGoogleLogin = async (googleResponse) => {
     try {
-      const response = await fetch(GOOGLE_LOGIN_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token: googleResponse.credential,
-        }),
+      const { credential: id_token } = googleResponse;
+
+      // Send Google ID token to backend for verification
+      const response = await fetch(LOGIN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token, login_type: 'google' }),  // Send id_token for Google login
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
+        setSuccess(result.message);
         localStorage.setItem("refreshToken", JSON.stringify(result.refresh_token));
         localStorage.setItem("accessToken", JSON.stringify(result.access_token));
 
+        // Redirect based on user role
         if (result.role === "Standard User") {
           navigate("/account");
         } else if (result.role === "Admin") {
@@ -86,11 +90,10 @@ const LoginForm = ({ onClose }) => {
         }
       } else {
         setErrorMessage(result.message);
-        setTimeout(() => setErrorMessage(""), 5000);
       }
     } catch (error) {
-      setErrorMessage(`Google login failed. Error: ${error}`);
-      setTimeout(() => setErrorMessage(""), 5000);
+      setErrorMessage('Google login failed. Please try again.');
+      console.error('Google login error:', error);
     }
   };
 
@@ -99,7 +102,7 @@ const LoginForm = ({ onClose }) => {
   };
 
   return (
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+    <GoogleOAuthProvider clientId="132929471498-lcfm9oobe5paa6re1bdvu34ac6m13t6a.apps.googleusercontent.com">
       {/* Modal Overlay */}
       <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center" onClick={onClose}>
         <div

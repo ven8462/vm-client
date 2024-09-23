@@ -1,47 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const BILLING_URL = "http://127.0.0.1:8000/api/billing-info/";
-
-const dummyData = [
-  {
-    name: "Virtual Machine 1",
-    user: "Alice Johnson",
-    subscription_plan: "Basic Plan",
-    amount: 2000,
-    status: "Active",
-    transaction_id: "TX123456789",
-  },
-  {
-    name: "Virtual Machine 2",
-    user: "Bob Smith",
-    subscription_plan: "Premium Plan",
-    amount: 5000,
-    status: "Active",
-    transaction_id: "TX987654321",
-  },
-  {
-    name: "Virtual Machine 3",
-    user: "Charlie Brown",
-    subscription_plan: "Pro Plan",
-    amount: 3000,
-    status: "Inactive",
-    transaction_id: "TX112233445",
-  },
-];
+const BILLING_URL = "https://vm-server.onrender.com/api/unpaid-backups/";
+const PAYMENT_URL = "https://vm-server.onrender.com/api/make-payment/";
 
 const Billing = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [bills, setBills] = useState([]);
   const [error, setError] = useState(null);
   const [token, setToken] = useState("");
   const [paymentVisible, setPaymentVisible] = useState(false);
-  const [selectedBill, setSelectedBill] = useState(null);
+  const [selectedBackup, setSelectedBackup] = useState(null);
   const [cardDetails, setCardDetails] = useState({
     cardNumber: "",
     expirationDate: "",
     cvv: "",
   });
+  const [paymentMessage, setPaymentMessage] = useState("");
 
   useEffect(() => {
     const accessToken = localStorage.getItem('accessToken');
@@ -59,9 +34,13 @@ const Billing = () => {
           },
         });
 
-        if (response.data.success) {
-          setBills(response.data.billing_info);
+        if(response.data.success){
+          setBills(response.data.data); 
+        } else{
+          setError(response.data.message);
+          setTimeout(() => setError(""), 5000);
         }
+
       } catch (error) {
         setError('Error fetching billing information.');
         console.error(error);
@@ -73,15 +52,8 @@ const Billing = () => {
     fetchBills();
   }, [token]);
 
-  // If there is no token, use dummy data for testing
-  useEffect(() => {
-    if (!token) {
-      setBills(dummyData);
-    }
-  }, [token]);
-
-  const handlePaymentToggle = (bill) => {
-    setSelectedBill(bill);
+  const handlePaymentToggle = (backup) => {
+    setSelectedBackup(backup);
     setPaymentVisible(!paymentVisible);
   };
 
@@ -90,23 +62,31 @@ const Billing = () => {
     setCardDetails((prev) => ({ ...prev, [name]: value }));
   };
 
-  const detectCardType = (number) => {
-    const visaPattern = /^4[0-9]{12}(?:[0-9]{3})?$/;
-    const masterCardPattern = /^5[1-5][0-9]{14}$/;
-    const amexPattern = /^3[47][0-9]{13}$/;
-
-    if (visaPattern.test(number)) return 'Visa';
-    if (masterCardPattern.test(number)) return 'MasterCard';
-    if (amexPattern.test(number)) return 'American Express';
-    return 'Unknown';
-  };
-
-  const handlePaymentSubmit = (e) => {
+  const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    // Mock payment logic can be added here
-    alert(`Payment processed for KES ${selectedBill.amount} using ${detectCardType(cardDetails.cardNumber)} card.`);
-    setPaymentVisible(false);
-    setCardDetails({ cardNumber: "", expirationDate: "", cvv: "" });
+    try {
+      const response = await axios.post(PAYMENT_URL, {
+        backup_id: selectedBackup.id, // Adjust based on your backend
+        amount: selectedBackup.bill,
+        card_number: cardDetails.cardNumber,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        setPaymentMessage(`Payment successful for KES ${selectedBackup.bill}.`);
+        // Optionally, refresh the bill list after payment
+        setBills(bills.filter(bill => bill.id !== selectedBackup.id));
+      }
+    } catch (error) {
+      setPaymentMessage('Payment failed. Please try again.');
+      console.error(error);
+    } finally {
+      setPaymentVisible(false);
+      setCardDetails({ cardNumber: "", expirationDate: "", cvv: "" });
+    }
   };
 
   if (loading) return <p>Loading...</p>;
@@ -115,29 +95,41 @@ const Billing = () => {
   return (
     <div>
       <h2 className="text-3xl font-bold">Billing Information</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {bills.map((bill, index) => (
-          <div key={index} className="bg-white p-4 shadow-md rounded-lg">
-            <h2 className="text-xl font-semibold mb-2">{bill.name}</h2>
-            <p className="text-gray-700">User: {bill.user}</p>
-            <p className="text-gray-700">Subscription plan: {bill.subscription_plan}</p>
-            <p className="text-gray-700">Amount: KES {bill.amount}</p>
-            <p className="text-gray-700">Status: {bill.status}</p>
-            <p className="text-gray-700">Transaction ID: {bill.transaction_id}</p>
-            <button
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-              onClick={() => handlePaymentToggle(bill)}
-            >
-              Pay with Card
-            </button>
-          </div>
-        ))}
-      </div>
+      {paymentMessage && <p className="text-green-500">{paymentMessage}</p>}
+      <table className="min-w-full bg-white border border-gray-300">
+        <thead>
+          <tr>
+            <th className="border-b p-2">VM Name</th>
+            <th className="border-b p-2">Size</th>
+            <th className="border-b p-2">Amount</th>
+            <th className="border-b p-2">Status</th>
+            <th className="border-b p-2">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bills.map((backup) => (
+            <tr key={backup.id}>
+              <td className="border-b p-2">{backup.vm_name}</td>
+              <td className="border-b p-2">{backup.size}</td>
+              <td className="border-b p-2">KES {backup.bill}</td>
+              <td className="border-b p-2">{backup.status}</td>
+              <td className="border-b p-2">
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                  onClick={() => handlePaymentToggle(backup)}
+                >
+                  Pay
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-      {paymentVisible && selectedBill && (
+      {paymentVisible && selectedBackup && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-5 rounded shadow-lg">
-            <h3 className="text-lg font-bold">Payment for KES {selectedBill.amount}</h3>
+            <h3 className="text-lg font-bold">Payment for KES {selectedBackup.bill}</h3>
             <form onSubmit={handlePaymentSubmit} className="mt-4">
               <div className="mb-4">
                 <label className="block text-sm">Card Number</label>
