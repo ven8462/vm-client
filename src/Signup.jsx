@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 const SIGNUP_URL = "https://vm-server.onrender.com/api/signup/";
-const GOOGLE_SIGNUP_URL = "http://127.0.0.1:8000/api/google-signup/";
 
 const Signup = ({ onClose }) => {
   const [username, setUsername] = useState('');
@@ -18,10 +16,14 @@ const Signup = ({ onClose }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
-  const togglePasswordVisibility = () => setPasswordVisible(!passwordVisible);
-  const toggleConfirmPasswordVisibility = () => setConfirmPasswordVisible(!confirmPasswordVisible);
+  const togglePasswordVisibility = () => {
+    setPasswordVisible(!passwordVisible);
+  };
 
-  // Handle form submit for manual signup
+  const toggleConfirmPasswordVisibility = () => {
+    setConfirmPasswordVisible(!confirmPasswordVisible);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -30,50 +32,53 @@ const Signup = ({ onClose }) => {
     }
     setLoading(true);
 
-    const data = { username, email, password };
+    const data = { 
+      username: username, 
+      email: email, 
+      password: password,
+      first_name: "Test",
+      last_name: "Test"
+    };
+    Object.entries(data).forEach(([key, value]) => console.log(`${key} : ${JSON.stringify(value)}`));
+
     try {
-      const response = await axios.post(SIGNUP_URL, data);
-      if (response.data.success) {
-        setSuccess(response.data.message);
+      const response = await fetch(SIGNUP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccess(result.message);
         setTimeout(() => setSuccess(""), 3000);
-        setTimeout(() => navigate("/login"), 5000);
+        setConfirmPassword("");
+        setEmail("");
+        setPassword("");
+        setUsername("");
+        console.log(result.errors);
+        setTimeout(() => navigate("/"), 5000);
       } else {
-        setErrorMessage(response.data.message);
+        setErrorMessage(result.message);
+        setTimeout(() => setErrorMessage(""), 3000);
       }
     } catch (error) {
       setErrorMessage(`Signup failed. Error: ${error}`);
+      setTimeout(() => setErrorMessage(""), 5000);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle Google sign-up/login response
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setLoading(true);
-    try {
-      const response = await axios.post(SIGNUP_URL, {
-        token: credentialResponse.credential,
-      });
-      if (response.data.success) {
-        setSuccess(response.data.message);
-        setTimeout(() => setSuccess(""), 3000);
-        setTimeout(() => navigate("/login"), 5000);
-      } else {
-        setErrorMessage(response.data.message);
-      }
-    } catch (error) {
-      setErrorMessage(`Google signup failed. Error: ${error}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleGoogleError = () => {
-    setErrorMessage("Google sign-in failed. Please try again.");
-  };
+  const handleGoogleLogin =()=>{
+    
+  }
+
 
   return (
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+    <GoogleOAuthProvider clientId="132929471498-lcfm9oobe5paa6re1bdvu34ac6m13t6a.apps.googleusercontent.com">
       <div className="flex items-center justify-center min-h-screen bg-gray-800">
         <div className="relative bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md sm:max-w-lg">
           <button
@@ -85,19 +90,19 @@ const Signup = ({ onClose }) => {
           </button>
 
           <h2 className="text-3xl font-bold mb-6 text-center text-white">Sign Up</h2>
-
-          {/* Google Sign-Up Button */}
+          {/* Google Login */}
           <div className="flex justify-center mb-6">
             <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              useOneTap
+              onSuccess={handleGoogleLogin}
+              onError={() => setErrorMessage('Google Sign-In failed.')}
+              text="signin_with"
+              shape="pill"
+              theme="outline"
+              width="300px"
             />
           </div>
 
           <h3 className="text-center text-gray-300 text-lg">OR</h3>
-
-          {/* Manual Signup Form */}
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             {/* Email Field */}
             <div>

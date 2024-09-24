@@ -42,7 +42,9 @@ const Billing = () => {
         }
 
       } catch (error) {
-        setError('Error fetching billing information.');
+        setError('');
+        setTimeout(() => setError(""), 3000);
+
         console.error(error);
       } finally {
         setLoading(false);
